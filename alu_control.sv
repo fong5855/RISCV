@@ -16,9 +16,8 @@ module alu_control
   always_comb begin  
     case (ALU_op)
       rty_:    alu_func = { sub, func3 };
-      ity_:    alu_func = { 1'b0, func3 };
-      //lsb_:    alu_func = (func3 == 3'b010)? 4'd0 : (func3 == 3'b001)? 4'd10 : 4'd9;
-      lsb_:    alu_func = (func3 == 3'b010)? 4'd0 : 4'd9;
+      ity_:    alu_func = (func3 == 3'b101)? { sub, func3 } : { 1'b0, func3 };
+lsb_:    alu_func = (func3 == 3'b010)? 4'd0 : (func3[2:1] == 2'b10)? `ALU_SLT : (func3[2:1] == 2'b11)? `ALU_SLTU : 4'd9;
       els_:    alu_func = 4'd0;
       default: alu_func = 4'd0;
     endcase 

@@ -22,7 +22,7 @@ module reg_32x32
     OUT_2 = mem[Read_ADDR_2][31:0];
   end
 
-  always_ff@(posedge clk, posedge rst)
+  always_ff@(negedge clk or  posedge rst)
   begin
     if(rst == 1)
     begin
