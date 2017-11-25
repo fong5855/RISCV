@@ -139,11 +139,25 @@ module CPU
   always_comb begin // IF/ID stall
     s12_stall = stall || hazard_stall;
   end // IF/ID stall
+  always_comb begin // IM data
+    if (rst) begin
+      inst_s2 = 32'b0;  
+    end
+    else if (flush) begin
+      inst_s2 = `NOP;
+    end
+    else if (s12_stall) begin
+      inst_s2 = inst_s2;
+    end
+    else begin
+      inst_s2 = IM_out;
+    end
+  end // IM data
   always_ff @(posedge clk)
   begin 
     if(rst == 1'b1)
     begin
-      inst_s2 <= 32'b0;
+      // inst_s2 <= 32'b0;
       pc_s2   <= 32'b0;
       pc4_s2  <= 32'b0;
     end
@@ -151,19 +165,19 @@ module CPU
     begin
       if(flush == 1'b1)
       begin
-        inst_s2 <= `NOP;
+        // inst_s2 <= `NOP;
         pc_s2   <= IM_address;
         pc4_s2  <= pc4;
       end
       else if (s12_stall == 1'b1)
       begin
-        inst_s2 <= inst_s2;
+        // inst_s2 <= inst_s2;
         pc_s2   <= pc_s2;
         pc4_s2  <= pc4_s2;
       end
       else
       begin
-        inst_s2 <= IM_out;
+        // inst_s2 <= IM_out;
         pc_s2   <= IM_address;
         pc4_s2  <= pc4;
       end
@@ -338,8 +352,8 @@ module CPU
   // forwarding control
   forwarding f (.op(op_s3), .regWrite_s5(RegWrite_s5), .regWrite_s4(RegWrite_s4), .rd_s5(rd_s5), .rd_s4(rd_s4), .src1(rs1_s3), .src2(rs2_s3), .forward1(forward1), .forward2(forward2));
 
-  mux4to1 s4_forward1 ( .Y(data1_s4), .S(DMtoReg_s4), .I0(se_imm_s4), .I1(pc4_s4), .I2(alu_result_s4), .I3(DM_out_s4));
-  mux4to1 s5_forward2 ( .Y(data2_s4), .S(DMtoReg_s4), .I0(se_imm_s4), .I1(pc4_s4), .I2(alu_result_s4), .I3(DM_out_s4));
+  mux4to1 s4_forward1 ( .Y(data1_s4), .S(DMtoReg_s4), .I0(se_imm_s4), .I1(pc4_s4), .I2(alu_result_s4), .I3(DM_out));
+  mux4to1 s5_forward2 ( .Y(data2_s4), .S(DMtoReg_s4), .I0(se_imm_s4), .I1(pc4_s4), .I2(alu_result_s4), .I3(DM_out));
 
   mux4to1 src1_sel (.Y(data1_s3), .I0(rs1_data_s3), .I1(wb_data_s5), .I2(data1_s4), .I3(32'b0), .S(forward1));
   mux4to1 src2_sel (.Y(data2_s3), .I0(rs2_data_s3), .I1(wb_data_s5), .I2(data2_s4), .I3(32'b0), .S(forward2));
@@ -469,7 +483,20 @@ module CPU
   assign DM_write = DM_write_s4;
   assign DM_enable = DM_en_s4;
   
-
+  always_comb begin // DM
+    if (rst) begin
+      DM_out_s5 = 32'b0;
+    end
+    else if (flush) begin
+      DM_out_s5 = DM_out;
+    end
+    else if (stall) begin
+      DM_out_s5 = DM_out;
+    end
+    else begin
+      DM_out_s5 = DM_out;
+    end
+  end // DM
   always_ff @(posedge clk) 
   begin
     if (rst == 1'b1)
@@ -478,7 +505,7 @@ module CPU
       RegWrite_s5   <= 1'b0;
       DMtoReg_s5    <= 2'b0;
       // DM
-      DM_out_s5     <= 32'b0;
+      // DM_out_s5     <= 32'b0;
       alu_result_s5 <= 32'b0;
       pc4_s5        <= 32'b0;
       se_imm_s5     <= 32'b0;
@@ -493,7 +520,7 @@ module CPU
         RegWrite_s5   <= RegWrite_s4;
         DMtoReg_s5    <= DMtoReg_s4;
         // DM
-        DM_out_s5     <= DM_out;
+        // DM_out_s5     <= DM_out;
         alu_result_s5 <= alu_result_s4;
         pc4_s5        <= pc4_s4;
         se_imm_s5     <= se_imm_s4;
@@ -506,7 +533,7 @@ module CPU
         RegWrite_s5   <= RegWrite_s5;
         DMtoReg_s5    <= DMtoReg_s5;
         // DM
-        DM_out_s5     <= DM_out_s5;
+        // DM_out_s5     <= DM_out_s5;
         alu_result_s5 <= alu_result_s5;
         pc4_s5        <= pc4_s5;
         se_imm_s5     <= se_imm_s5;
@@ -519,7 +546,7 @@ module CPU
         RegWrite_s5   <= RegWrite_s4;
         DMtoReg_s5    <= DMtoReg_s4;
         // DM
-        DM_out_s5     <= DM_out;
+        // DM_out_s5     <= DM_out;
         alu_result_s5 <= alu_result_s4;
         pc4_s5        <= pc4_s4;
         se_imm_s5     <= se_imm_s4;

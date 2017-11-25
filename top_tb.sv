@@ -103,14 +103,15 @@ module top_tb;
       end
       $fclose(gf);
     `endif
-    while (1)
-    begin
-      #(`CYCLE)
-      if (DM1.mem_data[65535] === 32'hffff_f000)
-      begin
-        break; 
-      end
-    end
+#100000
+    // while (1)
+    // begin
+      // #(`CYCLE)
+      // if (DM1.mem_data[65535] === 32'hffff_f000)
+      // begin
+        // break; 
+      // end
+    // end
     $display( "\nDone\n" );
     err=0;
     `ifdef prog0

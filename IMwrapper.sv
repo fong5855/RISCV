@@ -11,7 +11,7 @@ module IMwrapper
 
     // to CPU 
     output logic [31:0] Read_data,
-    output logic store,
+    output logic M_ready,
 
     // from Bus
     input [31:0] HRead_data,
@@ -25,6 +25,7 @@ module IMwrapper
     input Write,
     input Req,
     input DM_en,
+    input stall,
 
     // clk, rst
     input clk,
@@ -36,11 +37,12 @@ module IMwrapper
   parameter init_state = 2'b01;
   parameter sent_state = 2'b10;
   parameter end_state = 2'b11;
+  logic [31:0] temp_data, temp_addr;
   
   always_comb begin // next state logic
     case (state)
       wait_state: begin
-        n_state = (HGrant)? init_state : wait_state;
+        n_state = (HGrant && temp_addr!=Address)? init_state : wait_state;
       end
       init_state: begin
         n_state = (HReady && HGrant)? sent_state : wait_state;
@@ -68,6 +70,24 @@ module IMwrapper
     end
   end
 
+  
+  always_ff @(posedge clk) begin //reg
+    if (rst) begin
+      temp_data = 32'b0;
+      temp_addr = 32'b0;
+    end
+    else if (HGrant&&HReady) begin
+      if (state == sent_state) begin
+        temp_data <= HRead_data;
+        temp_addr <= Address;
+      end
+    end
+    else begin
+      temp_data <= temp_data;
+      temp_addr <= temp_addr;
+    end
+  end //reg
+
   always_comb begin // Mealy Machine output logic
     case (state)
       wait_state: begin
@@ -78,23 +98,24 @@ module IMwrapper
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = Req;
+        M_ready = (temp_addr == Address)? 1:~Req;
         HWrite = Write;
         // CPU
-        Read_data = 32'b0;
-        store = (Req == 1);
+        Read_data = temp_data;
       end
       init_state: begin
         // AHB
-        HAddress = 32'h10000000;
+        HAddress = temp_addr;
         HWrite_data = 32'b0;
         HTrans = 2'b10;
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = Req;
+        // M_ready = 1'b0;
+        M_ready = (temp_addr == Address)? 1:~Req;
         HWrite = Write;
         // CPU
-        Read_data = 32'b0;
-        store = 1'b1;
+        Read_data = temp_data;
       end
       sent_state: begin
         // AHB
@@ -103,24 +124,24 @@ module IMwrapper
         HTrans = 2'b10;
         HSize = 3'b010;
         HLock = 1'b0;
-        HReq = (DM_en == 1)? 1'b0 : Req;
+        HReq = (DM_en)? 0:Req;//Req;
+        M_ready = HReady;
         HWrite = Write;
         // CPU
         Read_data = (HReady == 1)? HRead_data : 32'b0;
-        store = (HReady == 1)? 1'b0 : 1'b1;
       end
       end_state: begin
         // AHB
-        HAddress = 32'b0;
+        HAddress = Address;
         HWrite_data = 32'b0;
         HTrans = 2'b10;
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = 1'b0;
+        M_ready = 1'b0;//HReady;
         HWrite = 1'b0;
         // CPU
-        Read_data = (HReady == 1)? HRead_data : 32'b0;
-        store = (HReady == 1);
+        Read_data = (HReady == 1)? HRead_data : temp_data;
       end
       default: begin
         // AHB
@@ -130,10 +151,10 @@ module IMwrapper
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = Req;
+        M_ready = 1'b1;
         HWrite = Write;
         // CPU
         Read_data = 32'b0;
-        store = (Req == 1);
       end
     endcase
   end // Mealy Machine output logic
