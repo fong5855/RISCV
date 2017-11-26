@@ -32,6 +32,7 @@ module CPU
   logic [31:0] IM_addr_s4;
 
   // pipe line IF/ID
+  logic [31:0] temp_pc, temp_pc2;
   logic [`inst_size] inst_s2;
   logic [IM_adSize-1:0] pc_s2;
   logic [IM_adSize-1:0] pc4_s2;
@@ -125,7 +126,7 @@ module CPU
       if(pcsrc == 1'b1)         //branch
         IM_address <= IM_addr_s4;  
       else if (pc_stall == 1'b1)
-        IM_address <= IM_address;
+        IM_address <= (hazard_stall)? temp_pc2:IM_address;
       else  
         IM_address <= pc4;      
     end
@@ -139,6 +140,20 @@ module CPU
   always_comb begin // IF/ID stall
     s12_stall = stall || hazard_stall;
   end // IF/ID stall
+  always_ff @(posedge s12_stall) begin // istruction
+    if (rst) begin
+      temp_pc <= 32'b0;
+      temp_pc2 <= 32'b0;
+    end
+    else if (~hazard_stall) begin
+      temp_pc <= IM_address;
+      temp_pc2 <= temp_pc;
+    end
+    else begin
+      temp_pc <= temp_pc;
+      temp_pc2 <= temp_pc2;
+    end
+  end // istruction
   always_comb begin // IM data
     if (rst) begin
       inst_s2 = 32'b0;  
@@ -165,19 +180,16 @@ module CPU
     begin
       if(flush == 1'b1)
       begin
-        // inst_s2 <= `NOP;
         pc_s2   <= IM_address;
         pc4_s2  <= pc4;
       end
       else if (s12_stall == 1'b1)
       begin
-        // inst_s2 <= inst_s2;
         pc_s2   <= pc_s2;
         pc4_s2  <= pc4_s2;
       end
       else
       begin
-        // inst_s2 <= IM_out;
         pc_s2   <= IM_address;
         pc4_s2  <= pc4;
       end
@@ -256,33 +268,7 @@ module CPU
     end
     else
     begin
-      if (hazard_or_flush == 1'b1)
-      begin
-        // control
-        ALU_op_s3   <= 2'b0;
-        DMtoReg_s3  <= 2'b0;
-        RegWrite_s3 <= 1'b0;
-        DM_en_s3    <= 1'b0;
-        DM_write_s3 <= 1'b0;
-        jump_s3     <= 1'b0;
-        auipc_s3    <= 1'b0;
-        op_s3       <= 7'b0010011;
-        // pc
-        pc_s3       <= pc_s2;
-        pc4_s3      <= pc4_s2;
-        // register
-        rs1_data_s3 <= rs1_data;
-        rs2_data_s3 <= rs2_data;
-        rs1_s3      <= 5'b0;
-        rs2_s3      <= 5'b0;
-        // imm
-        se_imm_s3   <= se_imm;
-        // ALU
-        func3_s3    <= func3;
-        func7_s3    <= func7;
-        rd_s3       <= rd;
-      end
-      else if (stall == 1'b1)
+      if (stall == 1'b1)
       begin
         // control
         ALU_op_s3   <= ALU_op_s3   ;
@@ -309,6 +295,32 @@ module CPU
         func3_s3    <= func3_s3;
         func7_s3    <= func7_s3;
         rd_s3       <= rd_s3;
+      end
+      else if (hazard_or_flush == 1'b1)
+      begin
+        // control
+        ALU_op_s3   <= 2'b0;
+        DMtoReg_s3  <= 2'b0;
+        RegWrite_s3 <= 1'b0;
+        DM_en_s3    <= 1'b0;
+        DM_write_s3 <= 1'b0;
+        jump_s3     <= 1'b0;
+        auipc_s3    <= 1'b0;
+        op_s3       <= 7'b0010011;
+        // pc
+        pc_s3       <= pc_s2;
+        pc4_s3      <= pc4_s2;
+        // register
+        rs1_data_s3 <= rs1_data;
+        rs2_data_s3 <= rs2_data;
+        rs1_s3      <= 5'b0;
+        rs2_s3      <= 5'b0;
+        // imm
+        se_imm_s3   <= se_imm;
+        // ALU
+        func3_s3    <= func3;
+        func7_s3    <= func7;
+        rd_s3       <= rd;
       end
       else
       begin
@@ -402,29 +414,7 @@ module CPU
     end
     else
     begin
-      if (flush == 1'b1)
-      begin
-        // wb
-        RegWrite_s4   <= RegWrite_s3;
-        DMtoReg_s4    <= DMtoReg_s3;
-        // mem
-        DM_en_s4      <= DM_en_s3;
-        DM_write_s4   <= DM_write_s3;
-        jump_s4       <= 1'b0;
-        branch_s4     <= 1'b0;
-        // pc
-        pc4_s4        <= pc4_s3;
-        // branch
-        branch_xor_s4 <= branch_xor;
-        IM_addr_s4    <= imm_IM_addr;
-        // imm
-        se_imm_s4     <= se_imm_s3;
-        // reg
-        rs2_data_s4   <= rs2_data_s3;
-        rd_s4         <= rd_s3;
-        alu_result_s4 <= alu_result;
-      end
-      else if (stall == 1'b1)
+      if (stall == 1'b1)
       begin
         // wb
         RegWrite_s4   <= RegWrite_s4;
@@ -445,6 +435,28 @@ module CPU
         rs2_data_s4   <= rs2_data_s4;
         rd_s4         <= rd_s4;
         alu_result_s4 <= alu_result_s4;
+      end
+      else if (flush == 1'b1)
+      begin
+        // wb
+        RegWrite_s4   <= RegWrite_s3;
+        DMtoReg_s4    <= DMtoReg_s3;
+        // mem
+        DM_en_s4      <= DM_en_s3;
+        DM_write_s4   <= DM_write_s3;
+        jump_s4       <= 1'b0;
+        branch_s4     <= 1'b0;
+        // pc
+        pc4_s4        <= pc4_s3;
+        // branch
+        branch_xor_s4 <= branch_xor;
+        IM_addr_s4    <= imm_IM_addr;
+        // imm
+        se_imm_s4     <= se_imm_s3;
+        // reg
+        rs2_data_s4   <= rs2_data_s3;
+        rd_s4         <= rd_s3;
+        alu_result_s4 <= alu_result;
       end
       else
       begin
@@ -514,19 +526,6 @@ module CPU
     end
     else
     begin
-      if (flush == 1'b1)
-      begin
-        // wb
-        RegWrite_s5   <= RegWrite_s4;
-        DMtoReg_s5    <= DMtoReg_s4;
-        // DM
-        // DM_out_s5     <= DM_out;
-        alu_result_s5 <= alu_result_s4;
-        pc4_s5        <= pc4_s4;
-        se_imm_s5     <= se_imm_s4;
-        // rd
-        rd_s5         <= rd_s4;
-      end
       if (stall == 1'b1)
       begin
         // wb
@@ -539,6 +538,19 @@ module CPU
         se_imm_s5     <= se_imm_s5;
         // rd
         rd_s5         <= rd_s5;
+      end
+      else if (flush == 1'b1)
+      begin
+        // wb
+        RegWrite_s5   <= RegWrite_s4;
+        DMtoReg_s5    <= DMtoReg_s4;
+        // DM
+        // DM_out_s5     <= DM_out;
+        alu_result_s5 <= alu_result_s4;
+        pc4_s5        <= pc4_s4;
+        se_imm_s5     <= se_imm_s4;
+        // rd
+        rd_s5         <= rd_s4;
       end
       else
       begin

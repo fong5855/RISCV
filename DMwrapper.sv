@@ -44,10 +44,10 @@ module DMwrapper
         n_state = (HReady && HGrant)? sent_state : init_state;
       end
       sent_state: begin
-        n_state = (!HGrant && HReady)? end_state : sent_state;
+        n_state = (HReady)? end_state : sent_state;
       end
       end_state: begin
-        n_state = (HReady)? wait_state : end_state;
+        n_state = wait_state;
       end
       default: begin
         n_state = wait_state;
@@ -90,7 +90,6 @@ module DMwrapper
     end
     else begin
       temp_addr <= temp_addr;
-      temp_addr <= temp_addr;
     end
   end // one cycle
 
@@ -107,7 +106,7 @@ module DMwrapper
         M_ready = (temp_addr == Address)? 1'b1:~Req;
         HWrite = Write;
         // CPU
-        Read_data = 32'b0;
+        Read_data = temp_read;
       end
       init_state: begin
         // AHB
@@ -120,7 +119,7 @@ module DMwrapper
         M_ready = 1'b0;
         HWrite = Write;
         // CPU
-        Read_data = 32'b0;
+        Read_data = temp_read;
       end
       sent_state: begin
         // AHB

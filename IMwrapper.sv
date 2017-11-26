@@ -51,7 +51,7 @@ module IMwrapper
         n_state = (!HGrant && HReady)? end_state : sent_state;
       end
       end_state: begin
-        n_state = (HReady)? wait_state : end_state;
+        n_state = wait_state;
       end
       default: begin
         n_state = wait_state;
@@ -132,7 +132,7 @@ module IMwrapper
       end
       end_state: begin
         // AHB
-        HAddress = Address;
+        HAddress = temp_addr;
         HWrite_data = 32'b0;
         HTrans = 2'b10;
         HSize = 3'b010;
@@ -141,7 +141,7 @@ module IMwrapper
         M_ready = 1'b0;//HReady;
         HWrite = 1'b0;
         // CPU
-        Read_data = (HReady == 1)? HRead_data : temp_data;
+        Read_data = temp_data;
       end
       default: begin
         // AHB
