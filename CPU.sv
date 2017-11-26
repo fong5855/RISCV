@@ -27,12 +27,12 @@ module CPU
   ////// stage 1
   logic hazard_stall;
 
+  logic [31:0] temp_pc;
   logic pcsrc;
   logic pc_stall;
   logic [31:0] IM_addr_s4;
 
   // pipe line IF/ID
-  logic [31:0] temp_pc, temp_pc2;
   logic [`inst_size] inst_s2;
   logic [IM_adSize-1:0] pc_s2;
   logic [IM_adSize-1:0] pc4_s2;
@@ -126,7 +126,7 @@ module CPU
       if(pcsrc == 1'b1)         //branch
         IM_address <= IM_addr_s4;  
       else if (pc_stall == 1'b1)
-        IM_address <= (hazard_stall)? temp_pc2:IM_address;
+        IM_address <= (hazard_stall)? temp_pc : IM_address;
       else  
         IM_address <= pc4;      
     end
@@ -136,24 +136,21 @@ module CPU
   assign IM_enable = 1'b1;
 
 
+  always_ff @(posedge stall) begin // pc reg
+    if (rst) begin
+      temp_pc <= 32'b0;
+    end
+    else if (~hazard_stall) begin
+      temp_pc <= IM_address;
+    end
+    else begin
+      temp_pc <= temp_pc;
+    end
+  end // pc reg
   // pipe line IF/ID
   always_comb begin // IF/ID stall
     s12_stall = stall || hazard_stall;
   end // IF/ID stall
-  always_ff @(posedge s12_stall) begin // istruction
-    if (rst) begin
-      temp_pc <= 32'b0;
-      temp_pc2 <= 32'b0;
-    end
-    else if (~hazard_stall) begin
-      temp_pc <= IM_address;
-      temp_pc2 <= temp_pc;
-    end
-    else begin
-      temp_pc <= temp_pc;
-      temp_pc2 <= temp_pc2;
-    end
-  end // istruction
   always_comb begin // IM data
     if (rst) begin
       inst_s2 = 32'b0;  
@@ -162,7 +159,7 @@ module CPU
       inst_s2 = `NOP;
     end
     else if (s12_stall) begin
-      inst_s2 = inst_s2;
+      inst_s2 = IM_out;
     end
     else begin
       inst_s2 = IM_out;

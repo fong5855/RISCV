@@ -169,7 +169,7 @@ module top(
       .Write_data(32'b0),
       .Write(1'b0),
       .Req(m1_en),
-      .DM_en(m2_en),
+      // .DM_en(m2_en),
       .stall(cpu_stall),
 
       // clk
@@ -186,7 +186,7 @@ module top(
       .DM_ready(m2_ready)
       );
 
-  DMwrapper M_DM(
+  IMwrapper M_DM(
       .HAddress(HADDR_M2),
       .HWrite_data(HWDATA_M2),
       .HTrans(HTRANS_M2),

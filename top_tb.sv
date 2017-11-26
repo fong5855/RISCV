@@ -103,7 +103,7 @@ module top_tb;
       end
       $fclose(gf);
     `endif
-#100000
+    #10000
     // while (1)
     // begin
       // #(`CYCLE)
