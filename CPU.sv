@@ -27,7 +27,7 @@ module CPU
   ////// stage 1
   logic hazard_stall;
 
-  logic [31:0] temp_pc;
+  // logic [31:0] temp_pc;
   logic pcsrc;
   logic pc_stall;
   logic [31:0] IM_addr_s4;
