@@ -126,7 +126,7 @@ module CPU
       if(pcsrc == 1'b1)         //branch
         IM_address <= IM_addr_s4;  
       else if (pc_stall == 1'b1)
-        IM_address <= (hazard_stall)? temp_pc : IM_address;
+        IM_address <= IM_address;
       else  
         IM_address <= pc4;      
     end
@@ -136,57 +136,60 @@ module CPU
   assign IM_enable = 1'b1;
 
 
-  always_ff @(posedge stall) begin // pc reg
-    if (rst) begin
-      temp_pc <= 32'b0;
-    end
-    else if (~hazard_stall) begin
-      temp_pc <= IM_address;
-    end
-    else begin
-      temp_pc <= temp_pc;
-    end
-  end // pc reg
-  // pipe line IF/ID
+  // always_ff @(posedge stall) begin // pc reg
+    // if (rst) begin
+      // temp_pc <= 32'b0;
+    // end
+    // else if (~hazard_stall) begin
+      // temp_pc <= IM_address;
+    // end
+    // else begin
+      // temp_pc <= temp_pc;
+    // end
+  // end // pc reg
+  // // pipe line IF/ID
   always_comb begin // IF/ID stall
     s12_stall = stall || hazard_stall;
   end // IF/ID stall
-  always_comb begin // IM data
-    if (rst) begin
-      inst_s2 = 32'b0;  
-    end
-    else if (flush) begin
-      inst_s2 = `NOP;
-    end
-    else if (s12_stall) begin
-      inst_s2 = IM_out;
-    end
-    else begin
-      inst_s2 = IM_out;
-    end
-  end // IM data
+  // always_comb begin // IM data
+    // if (rst) begin
+      // inst_s2 = 32'b0;  
+    // end
+    // else if (flush) begin
+      // inst_s2 = `NOP;
+    // end
+    // else if (s12_stall) begin
+      // inst_s2 = IM_out;
+    // end
+    // else begin
+      // inst_s2 = IM_out;
+    // end
+  // end // IM data
   always_ff @(posedge clk)
   begin 
     if(rst == 1'b1)
     begin
-      // inst_s2 <= 32'b0;
+      inst_s2 <= 32'b0;
       pc_s2   <= 32'b0;
       pc4_s2  <= 32'b0;
     end
     else
     begin
-      if(flush == 1'b1)
+      if (s12_stall == 1'b1)
       begin
-        pc_s2   <= IM_address;
-        pc4_s2  <= pc4;
-      end
-      else if (s12_stall == 1'b1)
-      begin
+        inst_s2 <= inst_s2;
         pc_s2   <= pc_s2;
         pc4_s2  <= pc4_s2;
       end
+      else if(flush == 1'b1)
+      begin
+        inst_s2 <= `NOP;
+        pc_s2   <= IM_address;
+        pc4_s2  <= pc4;
+      end
       else
       begin
+        inst_s2 <= IM_out;
         pc_s2   <= IM_address;
         pc4_s2  <= pc4;
       end
@@ -227,7 +230,7 @@ module CPU
   sign_extend se ( .se_imm(se_imm), .I_imm(I_imm), .S_imm(S_imm), .B_imm(B_imm), .U_imm(U_imm), .J_imm(J_imm), .op(op) );
   
   //hazard unit
-  hazard hazard_s2 (.op(op_s3), .rs1_s3(rs1_s3), .rs1_s2(rs1), .rs2_s2(rs2), .stall(hazard_stall), .flush_s3(hazard_flush));
+  hazard hazard_s2 (.op(op_s3), .rs1_s3(rd_s3), .rs1_s2(rs1), .rs2_s2(rs2), .stall(hazard_stall), .flush_s3(hazard_flush));
   // pipe line ID/EX
   always_comb begin // harzard or flush
     hazard_or_flush = hazard_flush || flush;
@@ -308,16 +311,16 @@ module CPU
         pc_s3       <= pc_s2;
         pc4_s3      <= pc4_s2;
         // register
-        rs1_data_s3 <= rs1_data;
-        rs2_data_s3 <= rs2_data;
+        rs1_data_s3 <= 32'b0;//rs1_data;
+        rs2_data_s3 <= 32'b0;//rs2_data;
         rs1_s3      <= 5'b0;
         rs2_s3      <= 5'b0;
         // imm
-        se_imm_s3   <= se_imm;
+        se_imm_s3   <= 32'b0;
         // ALU
-        func3_s3    <= func3;
-        func7_s3    <= func7;
-        rd_s3       <= rd;
+        func3_s3    <= 3'b0;
+        func7_s3    <= 7'b0;
+        rd_s3       <= 5'b0;
       end
       else
       begin
@@ -354,8 +357,16 @@ module CPU
   // ##################################################
   // ################## EX stage ######################
   // ##################################################
-  assign imm_IM_addr = pc_s3 + {se_imm_s3[31:2], 2'b0 };
+  // assign imm_IM_addr = pc_s3 + {se_imm_s3[31:2], 2'b0 };
   // assign imm_IM_addr = pc_s3 + se_imm_s3;
+  always_comb begin // pc logic 
+    if (op_s3 == `OP_JALR) begin
+      imm_IM_addr = alu_src1 + se_imm_s3;
+    end
+    else begin
+      imm_IM_addr = pc_s3 + {se_imm_s3[31:2], 2'b0 };
+    end
+  end // pc logic 
 
   
   // forwarding control
@@ -436,11 +447,11 @@ module CPU
       else if (flush == 1'b1)
       begin
         // wb
-        RegWrite_s4   <= RegWrite_s3;
+        RegWrite_s4   <= 1'b0;
         DMtoReg_s4    <= DMtoReg_s3;
         // mem
-        DM_en_s4      <= DM_en_s3;
-        DM_write_s4   <= DM_write_s3;
+        DM_en_s4      <= 1'b0;
+        DM_write_s4   <= 1'b0;
         jump_s4       <= 1'b0;
         branch_s4     <= 1'b0;
         // pc
@@ -451,7 +462,7 @@ module CPU
         // imm
         se_imm_s4     <= se_imm_s3;
         // reg
-        rs2_data_s4   <= rs2_data_s3;
+        rs2_data_s4   <= data2_s3; //rs2_data_s3;
         rd_s4         <= rd_s3;
         alu_result_s4 <= alu_result;
       end
@@ -473,7 +484,7 @@ module CPU
         // imm
         se_imm_s4     <= se_imm_s3;
         // reg
-        rs2_data_s4   <= rs2_data_s3;
+        rs2_data_s4   <= data2_s3;//rs2_data_s3;
         rd_s4         <= rd_s3;
         alu_result_s4 <= alu_result;
       end 
@@ -492,20 +503,20 @@ module CPU
   assign DM_write = DM_write_s4;
   assign DM_enable = DM_en_s4;
   
-  always_comb begin // DM
-    if (rst) begin
-      DM_out_s5 = 32'b0;
-    end
-    else if (flush) begin
-      DM_out_s5 = DM_out;
-    end
-    else if (stall) begin
-      DM_out_s5 = DM_out;
-    end
-    else begin
-      DM_out_s5 = DM_out;
-    end
-  end // DM
+  // always_comb begin // DM
+    // if (rst) begin
+      // DM_out_s5 = 32'b0;
+    // end
+    // else if (flush) begin
+      // DM_out_s5 = DM_out;
+    // end
+    // else if (stall) begin
+      // DM_out_s5 = DM_out;
+    // end
+    // else begin
+      // DM_out_s5 = DM_out;
+    // end
+  // end // DM
   always_ff @(posedge clk) 
   begin
     if (rst == 1'b1)
@@ -514,7 +525,7 @@ module CPU
       RegWrite_s5   <= 1'b0;
       DMtoReg_s5    <= 2'b0;
       // DM
-      // DM_out_s5     <= 32'b0;
+      DM_out_s5     <= 32'b0;
       alu_result_s5 <= 32'b0;
       pc4_s5        <= 32'b0;
       se_imm_s5     <= 32'b0;
@@ -529,33 +540,33 @@ module CPU
         RegWrite_s5   <= RegWrite_s5;
         DMtoReg_s5    <= DMtoReg_s5;
         // DM
-        // DM_out_s5     <= DM_out_s5;
+        DM_out_s5     <= DM_out_s5;
         alu_result_s5 <= alu_result_s5;
         pc4_s5        <= pc4_s5;
         se_imm_s5     <= se_imm_s5;
         // rd
         rd_s5         <= rd_s5;
       end
-      else if (flush == 1'b1)
-      begin
-        // wb
-        RegWrite_s5   <= RegWrite_s4;
-        DMtoReg_s5    <= DMtoReg_s4;
-        // DM
+      // else if (flush == 1'b1)
+      // begin
+        // // wb
+        // RegWrite_s5   <= 1'b0;
+        // DMtoReg_s5    <= DMtoReg_s4;
+        // // DM
         // DM_out_s5     <= DM_out;
-        alu_result_s5 <= alu_result_s4;
-        pc4_s5        <= pc4_s4;
-        se_imm_s5     <= se_imm_s4;
-        // rd
-        rd_s5         <= rd_s4;
-      end
+        // alu_result_s5 <= alu_result_s4;
+        // pc4_s5        <= pc4_s4;
+        // se_imm_s5     <= se_imm_s4;
+        // // rd
+        // rd_s5         <= rd_s4;
+      // end
       else
       begin
         // wb
         RegWrite_s5   <= RegWrite_s4;
         DMtoReg_s5    <= DMtoReg_s4;
         // DM
-        // DM_out_s5     <= DM_out;
+        DM_out_s5     <= DM_out;
         alu_result_s5 <= alu_result_s4;
         pc4_s5        <= pc4_s4;
         se_imm_s5     <= se_imm_s4;

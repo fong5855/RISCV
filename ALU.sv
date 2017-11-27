@@ -24,7 +24,8 @@ module ALU(
         end
         `ALU_SLT:
         begin
-          alu_result = (src1[31] == 1'b0)?((src2[31] == 1'b0)?((src1<src2)?32'b1 : 32'b0):32'b0):(src2[31] == 1'b0)?32'b1:(src1>src2)?32'b1:32'b0;
+          // alu_result = (src1[31] == 1'b0)?((src2[31] == 1'b0)?((src1<src2)?32'b1 : 32'b0):32'b0):(src2[31] == 1'b0)?32'b1:(src1>src2)?32'b1:32'b0;
+          alu_result = ($signed(src1) < $signed(src2))? 32'b1 : 32'b0;
           Overflow   = 1'b0;
         end
         `ALU_SLTU:
@@ -44,7 +45,7 @@ module ALU(
         end
         `ALU_SRA:
         begin
-          alu_result = $signed(src1) >> src2;
+          alu_result = $signed(src1) >>> src2;
           Overflow = 1'b0;
         end
         `ALU_OR:

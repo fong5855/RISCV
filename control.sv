@@ -68,7 +68,7 @@ module control
         ALU_op   = ity_;
         DMtoReg  = pc4_;  // DM  to reg
         RegWrite = tru_;  // write reg
-        DM_en    = tru_;  // DM
+        DM_en    = fal_;  // DM
         DM_write = fal_;  // no write DM
         jump     = tru_;  // J type
         branch   = fal_;  // no B
