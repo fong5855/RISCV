@@ -2,6 +2,7 @@ module ValidRam (
     input [`INDEX] Address,
     input Valid,
     output logic Valid_out,
+    input Write,
     input rst,
     input clk
     );

@@ -2,7 +2,7 @@ module DataMux (
     input S,
     input [`CDATA] A,
     input [`CDATA] B,
-    output logic [`CDATA] Z,
+    output logic [`CDATA] Z
     );
 
 always_comb begin // Mux

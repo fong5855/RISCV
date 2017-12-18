@@ -43,7 +43,7 @@ always_comb begin // mul
   S_address = P_address;
 end // mul
 
-tag_array TagRam _in(
+tag_array TagRam (
     .A   (P_address[`INDEX]),
     .DI  (P_address[`TAG]),
     .DO  (TagRam_Tag[`TAG]),
@@ -97,7 +97,7 @@ Control Control (
     .P_ready              (P_ready),
     .Match                (Match),
     .Valid                (Valid),
-    .Cache_data_select    (Catch_data_select),
+    .Cache_data_select    (Cache_data_select),
     .P_dataOE             (P_dataOE),
     .S_strobe             (S_strobe),
     .S_rw                 (S_rw),

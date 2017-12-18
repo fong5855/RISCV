@@ -1,7 +1,7 @@
 module WaitStateCtr (
     input Load,
     input [1:0] LoadValue,
-    output Carry,
+    output logic Carry,
     input clk
     );
   

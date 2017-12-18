@@ -5,7 +5,7 @@ module Control (
     input Match,
     input Valid,
     output logic Write,
-    output logic Catch_data_select,
+    output logic Cache_data_select,
     output logic P_data_select,
     output logic S_dataOE,
     output logic P_dataOE,
@@ -17,7 +17,7 @@ module Control (
 
 /*****************************************************************************
 *                                  logics                                   *
-*****************************************************************************/
+**************** *************************************************************/
 logic [1:0] wait_state_ctr_input = `WAITSTATES-1;
 logic load_wait_state_ctr;
 logic wait_state_ctr_carry;
@@ -120,7 +120,7 @@ end // next state logic
 task OutputVec;
 input [9:0] vector;
 begin
-  {load_wait_state_ctr, p_ready_en, P_ready, P_rw, S_strobe, S_rw, Cache_data_select, P_data_select, P_dataOE, S_dataOE} = vector;
+  {load_wait_state_ctr, p_ready_en, P_ready, Write, S_strobe, S_rw, Cache_data_select, P_data_select, P_dataOE, S_dataOE} = vector;
 end
 endtask
 
@@ -150,7 +150,7 @@ always_comb begin // output logic
     `STATE_WRITEMISS: begin
       OutputVec(10'b10_0010_0001);
     end
-    `STATEWRITESYS: begin
+    `STATE_WRITESYS: begin
       OutputVec(10'b00_0000_0001);
     end
     `STATE_WRITEDATA: begin
