@@ -4,8 +4,8 @@
 `include "./cache/DataMux.sv"
 `include "./cache/ValidRam.sv"
 `include "./cache/WaitStateCtr.sv"
-`include "./cache/data_array.v"
-`include "./cache/tag_array.v"
+// `include "./cache/data_array.v"
+// `include "./cache/tag_array.v"
 
 module cache (
     input  P_strobe,
@@ -97,7 +97,9 @@ Control Control (
     .P_ready              (P_ready),
     .Match                (Match),
     .Valid                (Valid),
+    .Write                (Write),
     .Cache_data_select    (Cache_data_select),
+    .P_data_select        (P_data_select),
     .P_dataOE             (P_dataOE),
     .S_strobe             (S_strobe),
     .S_rw                 (S_rw),

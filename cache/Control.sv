@@ -27,7 +27,7 @@ logic [3:0] state, next_state;
 
 WaitStateCtr WaitStateCtr (
     .Load      (load_wait_state_ctr),
-    .LoadValue (wait_state_carry),
+    .LoadValue (wait_state_ctr_input),
     .Carry     (wait_state_ctr_carry),
     .clk       (clk)
     );

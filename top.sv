@@ -16,6 +16,7 @@
 `include "./Cache_SYS.sv"
 `include "./Icache.sv"
 `include "stall_control.sv"
+`include "./IMwrapper.sv"
 `include "./cache/cache.sv"
 `include "./cache/cache_def.svh"
 
@@ -106,9 +107,9 @@ module top(
   );
 
   Icache Icache_wrapper(
-      .P_strobe (),
+      .P_strobe (P_strobe),
       .P_addr (P_addr),
-      .P_data (P_data),
+      .P_data (P_data_out),
       .P_ready (P_ready),
       .P_rw (P_rw),
       // CPU
@@ -123,7 +124,7 @@ module top(
   cache I_Cache(
       .P_strobe (P_strobe),
       .P_address (P_address),
-      .P_data_int (P_data_in),
+      .P_data_in (P_data_in),
       .P_data_out (P_data_out),
       .P_rw (P_rw),
       .P_ready (P_ready),
