@@ -15,7 +15,7 @@ set conf_qxlib_file {NULL}
 set defHierChar {/}
 set distributed_client_message_echo {1}
 set init_gnd_net {GND}
-set init_lef_file {/usr/cad/cell_based_design_kit/CBDK018_UMC_Faraday_v1.0/CIC/SOCE/lef/header6_V55_20ka_cic.lef /usr/cad/cell_based_design_kit/CBDK018_UMC_Faraday_v1.0/CIC/SOCE/lef/fsa0m_a_generic_core.lef /usr/cad/cell_based_design_kit/CBDK018_UMC_Faraday_v1.0/CIC/SOCE/lef/FSA0M_A_GENERIC_CORE_ANT_V55.lef}
+set init_lef_file {/usr/cad/cell_based_design_kit/CBDK018_UMC_Faraday_v1.0/CIC/SOCE/lef/header6_V55_20ka_cic.lef /usr/cad/cell_based_design_kit/CBDK018_UMC_Faraday_v1.0/CIC/SOCE/lef/fsa0m_a_generic_core.lef ./data_array/data_array.lef ./tag_array/tag_array.lef /usr/cad/cell_based_design_kit/CBDK018_UMC_Faraday_v1.0/CIC/SOCE/lef/FSA0M_A_GENERIC_CORE_ANT_V55.lef}
 set init_mmmc_file {MMMC.view}
 set init_pwr_net {VCC}
 set init_top_cell {CPU}

@@ -1,6 +1,6 @@
 # operating conditions and boundary conditions #
 
-set cycle  6.0         ;#clock period defined by designer
+set cycle  10.0         ;#clock period defined by designer
 
 create_clock -period $cycle [get_ports  clk]
 set_clock_uncertainty  0.1  [all_clocks]
