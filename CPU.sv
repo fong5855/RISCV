@@ -114,9 +114,11 @@ module CPU
   wire flush = pcsrc;
   // PS
   wire [IM_adSize-1:0] pc4 =(rst == 1'b1)? 32'b10000000:  IM_address + 3'b100;
+
   always_comb begin // pc stall
     pc_stall = stall || hazard_stall;
   end // pc stall
+
   always_ff @(posedge clk)
   begin
     if(rst == 1'b1)
