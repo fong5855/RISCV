@@ -1,11 +1,11 @@
-`include "./cache_def.svh"
-`include "./Comparator.sv"
-`include "./Control.sv"
-`include "./DataMux.sv"
-`include "./ValidRam.sv"
-`include "./WaitStateCtr.sv"
-`include "./data_array.v"
-`include "./tag_array.v"
+`include "./cache/cache_def.svh"
+`include "./cache/Comparator.sv"
+`include "./cache/Control.sv"
+`include "./cache/DataMux.sv"
+`include "./cache/ValidRam.sv"
+`include "./cache/WaitStateCtr.sv"
+`include "./cache/data_array.v"
+`include "./cache/tag_array.v"
 
 module cache (
     input  P_strobe,
