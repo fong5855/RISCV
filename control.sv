@@ -4,12 +4,13 @@ module control
     output logic [1:0] ALU_op,
     output logic [1:0] DMtoReg,
     output logic RegWrite, DM_en, DM_write, jump, branch, ALU_src,
+    output logic auipc,
     input [6:0] op 
   );
   // ALU OP
 	parameter rty_ = 2'b00;
 	parameter ity_ = 2'b01;		// add imm
-	parameter lsb_ = 2'b10;		// b type
+	parameter lsb_ = 2'b10;		// lw, s type, b type
   parameter els_ = 2'b11;		// else
   // ALU src
   parameter reg_ = 1'b0;
@@ -36,6 +37,7 @@ module control
         jump     = fal_;	// no J
         branch   = fal_;	// no B
         ALU_src  = reg_;	// reg
+        auipc    = fal_;  // auipc sel
       end
       `I_type:
       begin
@@ -47,6 +49,7 @@ module control
         jump     = fal_;  // no J
         branch   = fal_;  // no B
         ALU_src  = imm_;  // imm
+        auipc    = fal_;  // auipc sel
       end
       `OP_LW:
       begin
@@ -58,6 +61,19 @@ module control
         jump     = fal_;  // no J
         branch   = fal_;  // no B
         ALU_src  = imm_;  // imm
+        auipc    = fal_;  // auipc sel
+      end
+      `OP_JALR:
+      begin
+        ALU_op   = ity_;
+        DMtoReg  = pc4_;  // DM  to reg
+        RegWrite = tru_;  // write reg
+        DM_en    = fal_;  // DM
+        DM_write = fal_;  // no write DM
+        jump     = tru_;  // J type
+        branch   = fal_;  // no B
+        ALU_src  = imm_;  // imm
+        auipc    = fal_;  // auipc sel
       end
       `S_type:
       begin
@@ -69,6 +85,7 @@ module control
         jump     = fal_;  // no J
         branch   = fal_;  // no B
         ALU_src  = imm_;  // imm
+        auipc    = fal_;  // auipc sel
       end
       `B_type:
       begin
@@ -80,6 +97,7 @@ module control
         jump     = fal_;  // no J
         branch   = tru_;  // B
         ALU_src  = fal_;  // imm
+        auipc    = fal_;  // auipc sel
       end
       `U_type:
       begin
@@ -91,6 +109,19 @@ module control
         jump     = fal_;	// no J
         branch   = fal_;	// no B
         ALU_src  = imm_;  // imm
+        auipc    = fal_;  // auipc sel
+      end
+      `OP_AUPC:
+      begin
+        ALU_op   = els_;	// else
+        DMtoReg  = alu_;	// alu to reg
+        RegWrite = tru_;	// write reg
+        DM_en    = fal_;	// no DM
+        DM_write = fal_;	// no write DM
+        jump     = fal_;	// no J
+        branch   = fal_;	// no B
+        ALU_src  = imm_;  // imm
+        auipc    = tru_;  // auipc sel
       end
       `J_type:
       begin
@@ -102,6 +133,7 @@ module control
         jump     = tru_;	// J
         branch   = fal_;	// no B
         ALU_src  = imm_;	// imm
+        auipc    = fal_;  // auipc sel
       end
       default:
       begin
@@ -113,6 +145,7 @@ module control
         jump     = fal_;
         branch   = fal_;
         ALU_src  = imm_;
+        auipc    = fal_;  // auipc sel
       end
     endcase
   end

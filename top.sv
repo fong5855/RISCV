@@ -1,6 +1,8 @@
-`include "CPU.sv"
 `include "AHB_def.svh"
 `include "def.sv"
+`include "CPU.sv"
+`include "./hazard.sv"
+`include "./forwarding.sv"
 `include "sign_extend.sv"
 `include "./mux2to1.sv"
 `include "./mux4to1.sv"
@@ -11,8 +13,12 @@
 `include "SlaveWrapper.sv"
 `include "CPUwrapper.sv"
 `include "AHB.sv"
-`include "DMwrapper.sv"
-`include "IMwrapper.sv"
+`include "./Cache_SYS.sv"
+`include "./Icache.sv"
+`include "stall_control.sv"
+`include "./cache/cache.sv"
+`include "./cache/cache_def.svh"
+
 
 module top(
   input clk,
@@ -75,7 +81,13 @@ module top(
   logic [31:0] m2_in;
   logic m2_write;
   logic m2_en;
-  logic cpu_store, m1_cpu_store, m2_cpu_store;
+  logic cpu_stall;
+
+  // cache
+  logic P_strobe, P_rw, P_ready, S_strobe, S_rw;
+  logic [`CADDR] P_address, S_address;
+  logic [`CDATA] P_data_in, P_data_out, S_data_in, S_data_out;
+
 
   CPU CPU1 (
       .clk(clk),
@@ -90,13 +102,76 @@ module top(
     .DM_write(m2_write),
     .DM_out(m2_out),
 
-    .store((m1_cpu_store|m2_cpu_store))
+    .stall(cpu_stall)
   );
 
+  Icache Icache_wrapper(
+      .P_strobe (),
+      .P_addr (P_addr),
+      .P_data (P_data),
+      .P_ready (P_ready),
+      .P_rw (P_rw),
+      // CPU
+      .I_addr (m1_addr),
+      .IM_enable (m1_en),
+      .IM_out (m1_out),
+      .stall (m1_ready),
+      .clk (clk),
+      .rst (rst)
+      );
 
+  cache I_Cache(
+      .P_strobe (P_strobe),
+      .P_address (P_address),
+      .P_data_int (P_data_in),
+      .P_data_out (P_data_out),
+      .P_rw (P_rw),
+      .P_ready (P_ready),
+
+      .S_strobe (S_strobe),
+      .S_address (S_address),
+      .S_data_in (S_data_in),
+      .S_data_out (S_data_out),
+      .S_rw (S_rw),
+
+      .rst (rst),
+      .clk (clk)
+      );
   
+  Cache_SYS iCache_SYS(
+      // Bus output
+      .HAddress(HADDR_M1),
+      .HWrite_data(HWDATA_M1),
+      .HTrans(HTRANS_M1),
+      .HSize(HSIZE_M1),
+      .HLock(HLOCK_M1),
+      .HReq(HBUSREQ_M1),
+      .HWrite(HWRITE_M1),
 
-  AHB anb(
+      // CPU output
+      .Read_data(P_data_in),
+      .M_ready(),
+
+      // Bus input
+      .HRead_data(HRDATA), 
+      .HResp(HRESP),
+      .HReady(HREADY), // HREADY_S1
+      .HGrant(HGRANT_M1),
+
+      // cpu input
+      .Address(P_address),
+      .Write_data(32'b0),
+      .Write(1'b0),
+      .Req(S_strobe),
+      // .DM_en(m2_en),
+      // .stall(cpu_stall),
+
+      // clk
+      .clk(clk),
+      .rst(rst)
+      );
+
+  AHB ahb(
         .HCLK(clk),
         .HRESETn(~rst),
 
@@ -141,40 +216,49 @@ module top(
         .HSEL_S2(HSEL_S2)
       );
 
-  IMwrapper M_IM(
-      // Bus output
-      .HAddress(HADDR_M1),
-      .HWrite_data(HWDATA_M1),
-      .HTrans(HTRANS_M1),
-      .HSize(HSIZE_M1),
-      .HLock(HLOCK_M1),
-      .HReq(HBUSREQ_M1),
-      .HWrite(HWRITE_M1),
+  // IMwrapper M_IM(
+      // // Bus output
+      // .HAddress(HADDR_M1),
+      // .HWrite_data(HWDATA_M1),
+      // .HTrans(HTRANS_M1),
+      // .HSize(HSIZE_M1),
+      // .HLock(HLOCK_M1),
+      // .HReq(HBUSREQ_M1),
+      // .HWrite(HWRITE_M1),
 
-      // CPU output
-      .Read_data(m1_out),
-      .store(m1_cpu_store),
+      // // CPU output
+      // .Read_data(m1_out),
+      // .M_ready(m1_ready),
 
-      // Bus input
-      .HRead_data(HRDATA), 
-      .HResp(HRESP),
-      .HReady(HREADY),
-      .HGrant(HGRANT_M1),
+      // // Bus input
+      // .HRead_data(HRDATA), 
+      // .HResp(HRESP),
+      // .HReady(HREADY), // HREADY_S1
+      // .HGrant(HGRANT_M1),
 
-      // cpu input
-      .Address(m1_addr),
-      .Write_data(32'b0),
-      .Write(1'b0),
-      .Req(m1_en),
-      .DM_en(m2_en),
+      // // cpu input
+      // .Address(m1_addr),
+      // .Write_data(32'b0),
+      // .Write(1'b0),
+      // .Req(m1_en),
+      // // .DM_en(m2_en),
+      // .stall(cpu_stall),
 
-      // clk
-      .clk(clk),
-      .rst(rst)
+      // // clk
+      // .clk(clk),
+      // .rst(rst)
 
+      // );
+
+  stall_control stall_control(
+      .cpu_stall(cpu_stall),
+      .IM_enable(m1_en),
+      .DM_enable(m2_en),
+      .IM_ready(~m1_ready),
+      .DM_ready(m2_ready)
       );
 
-  DMwrapper M_DM(
+  IMwrapper M_DM(
       .HAddress(HADDR_M2),
       .HWrite_data(HWDATA_M2),
       .HTrans(HTRANS_M2),
@@ -184,11 +268,11 @@ module top(
       .HWrite(HWRITE_M2),
 
       .Read_data(m2_out),
-      .store(m2_cpu_store),
+      .M_ready(m2_ready),
 
       .HRead_data(HRDATA),
       .HResp(HRESP),
-      .HReady(HREADY),
+      .HReady(HREADY_S2),
       .HGrant(HGRANT_M2),
 
       // cpu input
@@ -196,6 +280,7 @@ module top(
       .Write_data(m2_in),
       .Write(m2_write),
       .Req(m2_en),
+      .stall(cpu_stall),
 
       // clk
       .clk(clk),
@@ -218,6 +303,8 @@ module top(
       .HAddress(HADDR),
       .HWrite_data(HWDATA),
       .HWrite(HWRITE),
+      .HSel(HSEL_S1),
+      .HGrant(HGRANT_M1),
 
       // MEM input
       .MRead_data(IM_out),
@@ -239,6 +326,8 @@ module top(
       .HAddress(HADDR),
       .HWrite_data(HWDATA),
       .HWrite(HWRITE),
+      .HSel(HSEL_S2),
+      .HGrant(HGRANT_M2),
 
       .MRead_data(DM_out),
 

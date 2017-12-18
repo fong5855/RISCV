@@ -60,12 +60,12 @@ module Arbiter(
 	      Nextcount = count;
       end
       3'b110:begin
-        if(count == 1'b0)begin 
+        if(Nextcount == 1'b0)begin 
           NextGrantMaster = 3'b100;
           Nextcount =  count +1'b1;
         end
         else begin
-          NextGrantMaster = 3'b100;
+          NextGrantMaster = 3'b010;
           Nextcount = count + 1'b1;
         end
       end

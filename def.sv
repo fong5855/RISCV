@@ -31,6 +31,7 @@
 `define OP_ANDI 7'b0010011
 `define OP_SLLI 7'b0010011
 `define OP_SRLI 7'b0010011
+`define OP_JALR 7'b1100111
 `define I_imm   31:20
 `define I_SL    24:20
 //S type 
@@ -49,6 +50,7 @@
 //U type 
 `define U_type  7'b0110111
 `define OP_LUI  7'b0110111
+`define OP_AUPC 7'b0010111
 `define U_imm   31:12
 //J type
 `define J_type  7'b1101111
@@ -59,16 +61,17 @@
 `define J_imm19 19:12
 //ALU func
 `define ALU_si  4
-`define ALU_ADD `ALU_si'd0
-`define ALU_SLL `ALU_si'd1
-`define ALU_SLT `ALU_si'd2
-//3                     
-`define ALU_XOR `ALU_si'd4
-`define ALU_SRL `ALU_si'd5
-`define ALU_OR  `ALU_si'd6
-`define ALU_AND `ALU_si'd7
-`define ALU_SUB `ALU_si'd8
-`define ALU_EQU `ALU_si'd9
-`define ALU_NEQ `ALU_si'd10
+`define ALU_ADD  `ALU_si'd0
+`define ALU_SLL  `ALU_si'd1
+`define ALU_SLT  `ALU_si'd2
+`define ALU_SLTU `ALU_si'd3
+`define ALU_XOR  `ALU_si'd4
+`define ALU_SRL  `ALU_si'd5
+`define ALU_OR   `ALU_si'd6
+`define ALU_AND  `ALU_si'd7
+`define ALU_SUB  `ALU_si'd8
+`define ALU_EQU  `ALU_si'd9
+`define ALU_NEQ  `ALU_si'd10
+`define ALU_SRA  `ALU_si'd13
 
 `endif

@@ -1,0 +1,24 @@
+00002083  // lw	ra,0(zero) # 0 <for-0x10>
+00000113  // li	sp,0
+00000193  // li	gp,0
+00400393  // li	t2,4
+
+00402203  // lw	tp,4(zero) # 4 <for-0xc>
+00802283  // lw	t0,8(zero) # 8 <for-0x8>
+00525e63  // ble	t0,tp,68 <skip+0x34>
+
+00020313  // mv	t1,tp
+00028213  // mv	tp,t0
+00030293  // mv	t0,t1
+0043a023  // sw	tp,0(t2)
+0053a223  // sw	t0,4(t2)
+00438393  // addi	t2,t2,4
+
+00110113  // addi	sp,sp,1
+fc116ce3  // bltu	sp,ra,20 <swap+0x4>
+00118193  // addi	gp,gp,1
+fc11e8e3  // bltu	gp,ra,20 <swap+0x4>
+20040fb7  // lui	t6,0x20040
+ffcf8f93  // addi	t6,t6,-4 # 2003fffc <skip+0x2003ffc8>
+ffffff37  // lui	t5,0xfffff
+01efa023  // sw	t5,0(t6)

@@ -1,5 +1,4 @@
-module IMwrapper
-  (
+module Cache_SYS (
     // to Bus
     output logic [31:0] HAddress,
     output logic [31:0] HWrite_data,
@@ -9,7 +8,7 @@ module IMwrapper
     output logic HReq,
     output logic HWrite,
 
-    // to CPU 
+    // to cache 
     output logic [31:0] Read_data,
     output logic M_ready,
 
@@ -24,13 +23,11 @@ module IMwrapper
     input [31:0] Write_data,
     input Write,
     input Req,
-    // input DM_en,
-    input stall,
 
     // clk, rst
     input clk,
     input rst
-  );
+    );
 
   logic [31:0] temp_read;
   logic [1:0] state, n_state;
@@ -48,10 +45,11 @@ module IMwrapper
         n_state = (HReady && HGrant)? DATA : ADDR;
       end
       DATA: begin
-        n_state = (stall && HReady)? END : (~stall && HReady)? IDEL : DATA;
+        n_state = (/*stall && */HReady)? END : (/*~stall && */HReady)? IDEL : DATA;
       end
       END: begin
-        n_state = (~stall)? IDEL : END;
+        // n_state = (~stall)? IDEL : END;
+        n_state = IDEL;
       end
       default: begin
         n_state = IDEL;
@@ -144,5 +142,5 @@ module IMwrapper
       end
     endcase
   end // Mealy Machine output logic
-
-endmodule 
+  
+endmodule

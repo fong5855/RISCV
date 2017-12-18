@@ -10,7 +10,7 @@ module DMwrapper
 
     // CPU
     output logic [31:0] Read_data,
-    output logic store,
+    output logic M_ready,
 
     input [31:0] HRead_data,
     input [1:0] HResp,
@@ -22,6 +22,7 @@ module DMwrapper
     input [31:0] Write_data,
     input Write,
     input Req,
+    input stall,
 
     // clk
     input clk,
@@ -43,10 +44,10 @@ module DMwrapper
         n_state = (HReady && HGrant)? sent_state : init_state;
       end
       sent_state: begin
-        n_state = (!HGrant && HReady)? end_state : sent_state;
+        n_state = (HReady)? end_state : sent_state;
       end
       end_state: begin
-        n_state = (HReady && !Req)? wait_state : end_state;
+        n_state = wait_state;
       end
       default: begin
         n_state = wait_state;
@@ -73,6 +74,25 @@ module DMwrapper
     end
   end // bus data
 
+  logic [31:0] temp_addr;
+  logic one_cycle;
+  always_ff @(posedge clk) begin // one cycle
+    if (rst) begin
+      one_cycle <= 0;
+      temp_addr <= 32'b0;
+    end
+    else if (state == end_state) begin
+      one_cycle <= 1;
+      temp_addr <= Address;
+    end
+    else if (state == init_state) begin
+      one_cycle <= 0;
+    end
+    else begin
+      temp_addr <= temp_addr;
+    end
+  end // one cycle
+
   always_comb begin // output logic
     case (state)
       wait_state: begin
@@ -83,23 +103,23 @@ module DMwrapper
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = Req;
+        M_ready = (temp_addr == Address)? 1'b1:~Req;
         HWrite = Write;
         // CPU
-        Read_data = 32'b0;
-        store = (Req == 1);
+        Read_data = temp_read;
       end
       init_state: begin
         // AHB
-        HAddress = 32'b0;
-        HWrite_data = 32'b0;
+        HAddress = Address;
+        HWrite_data = Write_data;
         HTrans = 2'b10;
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = 1'b1;
+        M_ready = 1'b0;
         HWrite = Write;
         // CPU
-        Read_data = 32'b0;
-        store = 1'b1;
+        Read_data = temp_read;
       end
       sent_state: begin
         // AHB
@@ -109,10 +129,10 @@ module DMwrapper
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = 1'b0;
+        M_ready = 1'b0;
         HWrite = Write;
         // CPU
         Read_data = (HReady == 1)? HRead_data : 32'b0;
-        store = (HReady == 1)? 1'b1 : 1'b1;
       end
       end_state: begin
         // AHB
@@ -122,10 +142,10 @@ module DMwrapper
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = 1'b0;
+        M_ready = 1'b0;
         HWrite = Write;
         // CPU
         Read_data = (HReady == 1)? temp_read : 32'b0;
-        store = 1'b0;
       end
       default: begin
         // AHB
@@ -135,10 +155,10 @@ module DMwrapper
         HSize = 3'b010;
         HLock = 1'b0;
         HReq = Req;
+        M_ready = 1'b1;
         HWrite = Write;
         // CPU
         Read_data = 32'b0;
-        store = (Req == 1);
       end
     endcase
   end // output logic

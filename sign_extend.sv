@@ -25,9 +25,13 @@ module sign_extend
       `U_type:
         se_imm = {U_imm, 12'b0 };
         //se_imm = (U_imm[19] == 1)? { 12'hfff, U_imm } : { 12'b0, U_imm };
+      `OP_AUPC:
+        se_imm = {U_imm, 12'b0 };
       `J_type:
         se_imm = (J_imm[19] == 1)? { 8'hff, 3'b111, J_imm, 1'b0 } : { 11'b0, J_imm, 1'b0 };
       `OP_LW:
+        se_imm = (I_imm[11] == 1)? { 20'hfffff, I_imm } : { 20'h00000, I_imm };
+      `OP_JALR:
         se_imm = (I_imm[11] == 1)? { 20'hfffff, I_imm } : { 20'h00000, I_imm };
       default:
         se_imm = 32'b0;
